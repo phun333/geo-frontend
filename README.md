@@ -1,59 +1,14 @@
 # Geo Organize Frontend
 
-C# ASP.NET Core backend projesi için geliştirilmiş modern Next.js frontend uygulaması. Türkiye odaklı harita yönetim sistemi.
+Bu proje, C# ASP.NET Core ile geliştirilmiş bir backend servisi için modern bir Next.js frontend uygulamasıdır. Temel amacı, Türkiye odaklı bir harita üzerinde coğrafi verileri (nokta, çizgi, poligon) yönetmektir.
 
-## 🚀 Özellikler
+## 🚀 Temel Özellikler
 
-- **Modern UI**: Next.js 15, shadcn/ui, ve Tailwind CSS ile geliştirilmiş
-- **Interaktif Harita**: Leaflet ile Türkiye haritası
-- **Gerçek Zamanlı CRUD**: Backend API ile senkronize veri yönetimi
-- **Koordinat Desteği**: Nokta, Çizgi ve Alan koordinat türleri
-- **Responsive Tasarım**: Mobil ve masaüstü uyumlu
-- **TypeScript**: Tip güvenliği ve daha iyi geliştirici deneyimi
-
-## 📋 Gereksinimler
-
-- Node.js 18.0 veya üzeri
-- npm veya yarn
-- Çalışan backend API (http://localhost:5000)
-
-## 🛠️ Kurulum
-
-### 1. Projeyi klonlayın
-```bash
-git clone <repo-url>
-cd geo-frontend
-```
-
-### 2. Bağımlılıkları yükleyin
-```bash
-npm install
-```
-
-### 3. Development server'ı başlatın
-```bash
-npm run dev
-```
-
-Uygulama http://localhost:3000 adresinde çalışacaktır.
-
-## 🎯 Kullanım
-
-### Harita Kullanımı
-- **Nokta Ekleme**: Harita üzerine tıklayarak yeni nokta ekleyin
-- **Nokta Seçme**: Mevcut noktaları seçmek için üzerine tıklayın
-- **Popup İnceleme**: Detaylı bilgi için popup'ları kullanın
-
-### Koordinat Türleri
-- 🔴 **Nokta**: Tekil konum işaretlemesi
-- 🔵 **Çizgi**: Rota veya yol çizimi
-- 🟢 **Alan**: Kapalı bölge tanımlama
-
-### Veri Yönetimi
-- **Ekleme**: "Nokta Ekle" butonu veya haritaya tıklama
-- **Düzenleme**: Tablodaki düzenle butonu
-- **Silme**: Tablodaki sil butonu (onay gerektirir)
-- **Görüntüleme**: Tablodaki göz butonu
+- **Modern Arayüz**: Next.js 15, shadcn/ui ve Tailwind CSS ile geliştirilmiştir.
+- **Interaktif Harita**: Leaflet tabanlı, Türkiye odaklı interaktif harita.
+- **CRUD İşlemleri**: Backend API ile senkronize, gerçek zamanlı veri yönetimi.
+- **Koordinat Desteği**: Nokta, Çizgi ve Alan (Poligon) olmak üzere üç farklı geometride veri desteği.
+- **TypeScript**: Proje genelinde tip güvenliği ve daha iyi bir geliştirici deneyimi sağlar.
 
 ## 📚 Proje Yapısı
 
@@ -76,33 +31,23 @@ geo-frontend/
 │       ├── types.ts             # TypeScript türleri
 │       └── utils.ts             # Yardımcı fonksiyonlar
 ├── public/                      # Statik dosyalar
-├── components.json              # shadcn/ui konfigürasyonu
 ├── next.config.js               # Next.js konfigürasyonu
-├── tailwind.config.js           # Tailwind CSS konfigürasyonu
 └── tsconfig.json                # TypeScript konfigürasyonu
 ```
 
-## 🔧 Teknolojiler
+## 🔧 Kullanılan Teknolojiler
 
-### Frontend
-- **Next.js 15**: React framework
-- **TypeScript**: Tip güvenliği
-- **Tailwind CSS**: Utility-first CSS framework
-- **shadcn/ui**: Bileşen kütüphanesi
-- **Leaflet**: Harita kütüphanesi
-- **React Leaflet**: React için Leaflet wrapper
-- **Lucide React**: İkon kütüphanesi
-- **Sonner**: Toast bildirimleri
-
-### Backend Entegrasyonu
-- **Fetch API**: HTTP istekleri
-- **Error Handling**: Hata yönetimi
-- **Loading States**: Yükleme durumları
-- **Validation**: Form doğrulama
+- **Next.js 15**: React framework'ü.
+- **TypeScript**: Tip güvenliği için.
+- **Tailwind CSS**: Utility-first CSS framework'ü.
+- **shadcn/ui**: Yeniden kullanılabilir bileşen kütüphanesi.
+- **Leaflet & React Leaflet**: Interaktif harita için.
+- **Lucide React**: İkon kütüphanesi.
+- **Sonner**: Toast bildirimleri için.
 
 ## 🔌 API Endpoints
 
-Frontend aşağıdaki backend endpoint'leri kullanır:
+Frontend'in bağlandığı temel API endpoint'leri:
 
 ```
 GET    /api/points           # Tüm noktaları getir
@@ -111,6 +56,24 @@ POST   /api/points           # Yeni nokta oluştur
 PUT    /api/points/{id}      # Noktayı güncelle
 DELETE /api/points/{id}      # Noktayı sil
 ```
+
+## 🎯 Kullanım
+
+### Harita Kullanımı
+- **Nokta Ekleme**: Harita üzerine tıklayarak yeni nokta ekleyin
+- **Nokta Seçme**: Mevcut noktaları seçmek için üzerine tıklayın
+- **Popup İnceleme**: Detaylı bilgi için popup'ları kullanın
+
+### Koordinat Türleri
+- 🔴 **Nokta**: Tekil konum işaretlemesi
+- 🔵 **Çizgi**: Rota veya yol çizimi
+- 🟢 **Alan**: Kapalı bölge tanımlama
+
+### Veri Yönetimi
+- **Ekleme**: "Nokta Ekle" butonu veya haritaya tıklama
+- **Düzenleme**: Tablodaki düzenle butonu
+- **Silme**: Tablodaki sil butonu (onay gerektirir)
+- **Görüntüleme**: Tablodaki göz butonu
 
 ## 🎨 Özelleştirme
 
@@ -177,10 +140,3 @@ Bu proje MIT lisansı altında lisanslanmıştır.
 3. Değişikliklerinizi commit edin (`git commit -m 'Add some amazing feature'`)
 4. Branch'inizi push edin (`git push origin feature/amazing-feature`)
 5. Pull Request oluşturun
-
-## 📞 Destek
-
-Sorularınız için:
-- GitHub Issues
-- Email: [email]
-- Discord: [discord]
