@@ -26,35 +26,29 @@ interface MapComponentProps {
 const TURKEY_CENTER: LatLngExpression = [39.0, 35.0];
 const TURKEY_ZOOM = 6;
 
-const MapClickHandler = ({ onMapClick }: { onMapClick?: (lat: number, lng: number) => void }) => {
-  const map = useMap();
-  
-  useEffect(() => {
-    if (!onMapClick) return;
-    
-    const handleClick = (e: any) => {
-      onMapClick(e.latlng.lat, e.latlng.lng);
-    };
-    
-    map.on('click', handleClick);
-    
-    return () => {
-      map.off('click', handleClick);
-    };
-  }, [map, onMapClick]);
-  
-  return null;
-};
-
-const MapComponent: React.FC<MapComponentProps> = ({ 
+// --- Step 1: Create a dedicated MapContent component ---
+const MapContent = ({ 
   points, 
   onMapClick, 
   selectedPoint, 
   onPointSelect,
   hiddenPoints = new Set()
-}) => {
-  const mapRef = useRef<any>(null);
+}: MapComponentProps) => {
+  const map = useMap();
 
+  // Map Click Handler Logic
+  useEffect(() => {
+    if (!onMapClick) return;
+    const handleClick = (e: any) => {
+      onMapClick(e.latlng.lat, e.latlng.lng);
+    };
+    map.on('click', handleClick);
+    return () => {
+      map.off('click', handleClick);
+    };
+  }, [map, onMapClick]);
+  
+  // Render function for points (markers, polylines, polygons)
   const renderPoint = (point: Point) => {
     const coordinates = parseGeometry(point.geometry, point.coordinateType);
     const color = getCoordinateTypeColor(point.coordinateType);
@@ -145,23 +139,32 @@ const MapComponent: React.FC<MapComponentProps> = ({
         return null;
     }
   };
+  
+  return (
+    <>
+      {points.filter(point => !hiddenPoints.has(point.id)).map(renderPoint)}
+    </>
+  );
+};
 
+
+// --- Step 2: Simplify the main MapComponent ---
+const MapComponent: React.FC<MapComponentProps> = (props) => {
   return (
     <div className="w-full h-full">
       <MapContainer
         center={TURKEY_CENTER}
         zoom={TURKEY_ZOOM}
         style={{ height: '100%', width: '100%' }}
-        ref={mapRef}
       >
         <TileLayer
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
         />
         
-        <MapClickHandler onMapClick={onMapClick} />
-        
-        {points.filter(point => !hiddenPoints.has(point.id)).map(renderPoint)}
+        {/* All dynamic content is now inside MapContent */}
+        <MapContent {...props} />
+
       </MapContainer>
     </div>
   );
