@@ -9,7 +9,7 @@ import { usePoints } from '@/hooks/usePoints';
 import { Point, CreatePointRequest, UpdatePointRequest } from '@/lib/types';
 import PointsTable from '@/components/PointsTable';
 import PointDialog from '@/components/PointDialog';
-import { Plus, RefreshCw, Map } from 'lucide-react';
+import { Plus, RefreshCw, Map, MapPin } from 'lucide-react';
 
 // Dynamically import MapComponent to avoid SSR issues with Leaflet
 const MapComponent = dynamic(() => import('@/components/MapComponent'), {
@@ -80,6 +80,13 @@ export default function HomePage() {
     });
   };
 
+  const totalPoints = points.length;
+  const pointsByType = {
+    points: points.filter(p => p.coordinateType === 1).length,
+    lines: points.filter(p => p.coordinateType === 2).length,
+    polygons: points.filter(p => p.coordinateType === 3).length,
+  };
+
   return (
     <div className="min-h-screen bg-gray-50">
       <Toaster />
@@ -95,143 +102,119 @@ export default function HomePage() {
                 <p className="text-sm text-gray-600">Türkiye Harita Yönetim Sistemi</p>
               </div>
             </div>
-            <div className="flex items-center gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleRefresh}
-                disabled={loading}
-              >
-                <RefreshCw className={`w-4 h-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
-                Yenile
-              </Button>
-              <Button
-                onClick={handleAddPoint}
-                size="sm"
-              >
-                <Plus className="w-4 h-4 mr-2" />
-                Nokta Ekle
-              </Button>
+            <div className="flex items-center gap-4">
+              {/* Point Count in Header */}
+
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleRefresh}
+                  disabled={loading}
+                >
+                  <RefreshCw className={`w-4 h-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
+                  Yenile
+                </Button>
+                <Button
+                  onClick={handleAddPoint}
+                  size="sm"
+                >
+                  <Plus className="w-4 h-4 mr-2" />
+                  Nokta Ekle
+                </Button>
+              </div>
             </div>
           </div>
         </div>
       </div>
 
       {/* Main Content */}
-      <div className="container mx-auto px-4 py-6">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Map Section */}
-          <div className="lg:col-span-2">
-            <Card className="h-[600px]">
+      <div className="container mx-auto px-4 py-6 space-y-6">
+        
+        {/* Map Section - Full Width */}
+        <Card className="h-[600px]">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Map className="w-5 h-5" />
+              Türkiye Haritası
+              {selectedPoint && (
+                <span className="text-sm font-normal text-gray-600">
+                  - {selectedPoint.name}
+                </span>
+              )}
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="p-0 h-[calc(100%-4rem)]">
+            <MapComponent
+              points={points}
+              onMapClick={handleMapClick}
+              selectedPoint={selectedPoint}
+              onPointSelect={handlePointSelect}
+              hiddenPoints={hiddenPoints}
+            />
+          </CardContent>
+        </Card>
+
+        {/* Table and Statistics Section */}
+        <div className="flex flex-col lg:flex-row gap-6">
+          
+          {/* Points Table Section - Fills remaining space */}
+          <div className="flex-1">
+            <Card className="h-full">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
-                  <Map className="w-5 h-5" />
-                  Türkiye Haritası
-                  {selectedPoint && (
-                    <span className="text-sm font-normal text-gray-600">
-                      - {selectedPoint.name}
-                    </span>
-                  )}
+                  <MapPin className="w-5 h-5" />
+                  Koordinat Listesi
+                  <span className="text-sm font-normal text-gray-600">
+                    ({totalPoints} nokta)
+                  </span>
                 </CardTitle>
               </CardHeader>
-              <CardContent className="p-0 h-[calc(100%-4rem)]">
-                <MapComponent
+              <CardContent>
+                <PointsTable
                   points={points}
-                  onMapClick={handleMapClick}
+                  onEdit={handleEditPoint}
+                  onDelete={deletePoint}
+                  onSelect={handlePointSelect}
                   selectedPoint={selectedPoint}
-                  onPointSelect={handlePointSelect}
+                  loading={loading}
                   hiddenPoints={hiddenPoints}
+                  onToggleVisibility={handleToggleVisibility}
                 />
               </CardContent>
             </Card>
           </div>
 
-          {/* Points Table Section */}
-          <div className="lg:col-span-1">
-            <PointsTable
-              points={points}
-              onEdit={handleEditPoint}
-              onDelete={deletePoint}
-              onSelect={handlePointSelect}
-              selectedPoint={selectedPoint}
-              loading={loading}
-              hiddenPoints={hiddenPoints}
-              onToggleVisibility={handleToggleVisibility}
-            />
+          {/* Statistics Section - Square boxes */}
+          <div className="flex flex-row lg:flex-col gap-2 justify-start">
+            <div className="w-24 h-24 bg-red-50 border border-red-200 rounded-lg flex flex-col items-center justify-center">
+              <div className="w-2 h-2 rounded-full bg-red-500 mb-1"></div>
+              <p className="text-xs font-semibold text-red-700">Noktalar</p>
+              <p className="text-xl font-bold text-red-900 mt-1">{pointsByType.points}</p>
+            </div>
+
+            <div className="w-24 h-24 bg-blue-50 border border-blue-200 rounded-lg flex flex-col items-center justify-center">
+              <div className="w-2 h-2 rounded-full bg-blue-500 mb-1"></div>
+              <p className="text-xs font-semibold text-blue-700">Çizgiler</p>
+              <p className="text-xl font-bold text-blue-900 mt-1">{pointsByType.lines}</p>
+            </div>
+
+            <div className="w-24 h-24 bg-green-50 border border-green-200 rounded-lg flex flex-col items-center justify-center">
+              <div className="w-2 h-2 rounded-full bg-green-500 mb-1"></div>
+              <p className="text-xs font-semibold text-green-700">Alanlar</p>
+              <p className="text-xl font-bold text-green-900 mt-1">{pointsByType.polygons}</p>
+            </div>
+
+            <div className="w-24 h-24 bg-slate-50 border border-slate-200 rounded-lg flex flex-col items-center justify-center">
+              <div className="w-2 h-2 rounded-full bg-slate-500 mb-1"></div>
+              <p className="text-xs font-semibold text-slate-700">Toplam</p>
+              <p className="text-xl font-bold text-slate-900 mt-1">{totalPoints}</p>
+            </div>
           </div>
         </div>
 
-        {/* Info Section */}
-        <div className="mt-6 grid grid-cols-1 md:grid-cols-3 gap-4">
-          <Card>
-            <CardContent className="pt-6">
-              <div className="flex items-center gap-2">
-                <div className="w-4 h-4 rounded-full bg-red-500"></div>
-                <div>
-                  <p className="text-sm font-medium">Noktalar</p>
-                  <p className="text-2xl font-bold">
-                    {points.filter(p => p.coordinateType === 1).length}
-                  </p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardContent className="pt-6">
-              <div className="flex items-center gap-2">
-                <div className="w-4 h-4 rounded-full bg-blue-500"></div>
-                <div>
-                  <p className="text-sm font-medium">Çizgiler</p>
-                  <p className="text-2xl font-bold">
-                    {points.filter(p => p.coordinateType === 2).length}
-                  </p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardContent className="pt-6">
-              <div className="flex items-center gap-2">
-                <div className="w-4 h-4 rounded-full bg-green-500"></div>
-                <div>
-                  <p className="text-sm font-medium">Alanlar</p>
-                  <p className="text-2xl font-bold">
-                    {points.filter(p => p.coordinateType === 3).length}
-                  </p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
         {/* Usage Instructions */}
-        <Card className="mt-6">
-          <CardHeader>
-            <CardTitle className="text-lg">Kullanım Kılavuzu</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-              <div>
-                <h4 className="font-semibold mb-2">Harita Kullanımı:</h4>
-                <ul className="space-y-1 text-gray-600">
-                  <li>• Harita üzerine tıklayarak yeni nokta ekleyin</li>
-                  <li>• Mevcut noktaları seçmek için üzerine tıklayın</li>
-                  <li>• Popup&apos;lardan detaylı bilgi alın</li>
-                </ul>
-              </div>
-              <div>
-                <h4 className="font-semibold mb-2">Koordinat Türleri:</h4>
-                <ul className="space-y-1 text-gray-600">
-                  <li>• <span className="text-red-500">●</span> Nokta: Tekil konum</li>
-                  <li>• <span className="text-blue-500">●</span> Çizgi: Rota/yol</li>
-                  <li>• <span className="text-green-500">●</span> Alan: Kapalı bölge</li>
-                </ul>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+        
       </div>
 
       {/* Point Dialog */}
