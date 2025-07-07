@@ -72,7 +72,7 @@ export class ApiService {
   }
 }
 
-// Geometry parsing utilities
+//* geo parsing utilities
 export const parseGeometry = (geometry: string, type: CoordinateType): [number, number][] => {
   try {
     const coordinates = geometry.split(',').map(coord => {
