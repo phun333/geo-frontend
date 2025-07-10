@@ -6,10 +6,11 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Toaster } from '@/components/ui/sonner';
 import { usePoints } from '@/hooks/usePoints';
-import { Point, CreatePointRequest, UpdatePointRequest } from '@/lib/types';
+import { Point, CreatePointRequest, UpdatePointRequest, CoordinateType } from '@/lib/types';
 import PointsTable from '@/components/PointsTable';
 import PointDialog from '@/components/PointDialog';
 import { Plus, RefreshCw, Map, MapPin } from 'lucide-react';
+import { DrawingToolbar, DrawingMode } from '@/components/DrawingToolbar';
 
 // Dynamically import MapComponent to avoid SSR issues with Leaflet
 const MapComponent = dynamic(() => import('@/components/MapComponent'), {
@@ -24,29 +25,38 @@ const MapComponent = dynamic(() => import('@/components/MapComponent'), {
   )
 });
 
+// Dynamically import components that use browser-only APIs
+const MapDrawController = dynamic(() => import('@/components/MapDrawController'), { ssr: false });
+
 export default function HomePage() {
   const { points, loading, error, createPoint, updatePoint, deletePoint, fetchPoints } = usePoints();
   const [selectedPoint, setSelectedPoint] = useState<Point | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingPoint, setEditingPoint] = useState<Point | null>(null);
   const [mapClickCoordinates, setMapClickCoordinates] = useState<{ lat: number; lng: number } | null>(null);
+  const [newShapeInfo, setNewShapeInfo] = useState<{ geometry: string; coordinateType: CoordinateType } | null>(null);
   const [hiddenPoints, setHiddenPoints] = useState<Set<number>>(new Set());
+  const [drawingMode, setDrawingMode] = useState<DrawingMode>('off');
 
   const handleMapClick = (lat: number, lng: number) => {
+    if (drawingMode !== 'off') return; // Çizim modunda ise haritaya tıklamayı engelle
     setMapClickCoordinates({ lat, lng });
     setEditingPoint(null);
+    setNewShapeInfo(null);
     setDialogOpen(true);
   };
 
-  const handleAddPoint = () => {
-    setMapClickCoordinates(null);
+  const handleShapeDrawn = (type: CoordinateType, geometry: string) => {
+    setNewShapeInfo({ geometry, coordinateType: type });
     setEditingPoint(null);
+    setMapClickCoordinates(null);
     setDialogOpen(true);
   };
 
   const handleEditPoint = (point: Point) => {
     setEditingPoint(point);
     setMapClickCoordinates(null);
+    setNewShapeInfo(null);
     setDialogOpen(true);
   };
 
@@ -115,13 +125,6 @@ export default function HomePage() {
                   <RefreshCw className={`w-4 h-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
                   Yenile
                 </Button>
-                <Button
-                  onClick={handleAddPoint}
-                  size="sm"
-                >
-                  <Plus className="w-4 h-4 mr-2" />
-                  Nokta Ekle
-                </Button>
               </div>
             </div>
           </div>
@@ -151,9 +154,22 @@ export default function HomePage() {
               selectedPoint={selectedPoint}
               onPointSelect={handlePointSelect}
               hiddenPoints={hiddenPoints}
-            />
+            >
+              {drawingMode !== 'off' && (
+                <MapDrawController
+                  drawingMode={drawingMode}
+                  setDrawingMode={setDrawingMode}
+                  onShapeDrawn={handleShapeDrawn}
+                />
+              )}
+            </MapComponent>
           </CardContent>
         </Card>
+        
+        {/* Drawing Toolbar Section */}
+        <div className="flex justify-center">
+            <DrawingToolbar drawingMode={drawingMode} setDrawingMode={setDrawingMode} />
+        </div>
 
         {/* Table and Statistics Section */}
         <div className="flex flex-col lg:flex-row gap-6">
@@ -224,6 +240,7 @@ export default function HomePage() {
         point={editingPoint}
         onSave={handleSavePoint}
         initialCoordinates={mapClickCoordinates}
+        newShapeInfo={newShapeInfo}
       />
     </div>
   );
