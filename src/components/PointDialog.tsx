@@ -15,6 +15,7 @@ interface PointDialogProps {
   point?: Point | null;
   onSave: (request: CreatePointRequest | UpdatePointRequest) => Promise<boolean>;
   initialCoordinates?: { lat: number; lng: number } | null;
+  newShapeInfo?: { geometry: string; coordinateType: CoordinateType } | null;
 }
 
 const PointDialog: React.FC<PointDialogProps> = ({
@@ -23,6 +24,7 @@ const PointDialog: React.FC<PointDialogProps> = ({
   point,
   onSave,
   initialCoordinates,
+  newShapeInfo,
 }) => {
   const [name, setName] = useState('');
   const [coordinateType, setCoordinateType] = useState<CoordinateType>(CoordinateType.Point);
@@ -39,15 +41,19 @@ const PointDialog: React.FC<PointDialogProps> = ({
       setGeometry(point.geometry);
     } else {
       setName('');
-      setCoordinateType(CoordinateType.Point);
-      if (initialCoordinates) {
+      if (newShapeInfo) {
+        setCoordinateType(newShapeInfo.coordinateType);
+        setGeometry(newShapeInfo.geometry);
+      } else if (initialCoordinates) {
+        setCoordinateType(CoordinateType.Point);
         setGeometry(`${initialCoordinates.lng} ${initialCoordinates.lat}`);
       } else {
+        setCoordinateType(CoordinateType.Point);
         setGeometry('');
       }
     }
     setErrors({});
-  }, [point, initialCoordinates, open]);
+  }, [point, initialCoordinates, newShapeInfo, open]);
 
   const validateForm = (): boolean => {
     const newErrors: { [key: string]: string } = {};
@@ -81,8 +87,10 @@ const PointDialog: React.FC<PointDialogProps> = ({
           break;
         
         case CoordinateType.Polygon:
-          if (coords.length < 4) {
-            newErrors.geometry = 'Alan için en az 4 koordinat çifti gereklidir (kapalı alan)';
+          if (coords.length < 4 || coords.length > 11) {
+            newErrors.geometry = 'Poligon 3 ila 10 köşe içermelidir (4 ila 11 koordinat).';
+          } else if (coords[0] !== coords[coords.length - 1]) {
+            newErrors.geometry = 'Poligon kapalı olmalıdır (ilk ve son koordinat aynı olmalı).';
           }
           break;
       }
@@ -142,7 +150,7 @@ const PointDialog: React.FC<PointDialogProps> = ({
       case CoordinateType.Line:
         return 'Format: "boylam1 enlem1, boylam2 enlem2"';
       case CoordinateType.Polygon:
-        return 'Format: "boylam1 enlem1, boylam2 enlem2, ..." (kapalı alan)';
+        return '3-10 köşeli kapalı alan. Örn: "x1 y1, x2 y2, x3 y3, x1 y1"';
       default:
         return '';
     }

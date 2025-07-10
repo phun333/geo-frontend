@@ -149,7 +149,7 @@ const MapContent = ({
 
 
 // --- Step 2: Simplify the main MapComponent ---
-const MapComponent: React.FC<MapComponentProps> = (props) => {
+const MapComponent: React.FC<React.PropsWithChildren<MapComponentProps>> = ({ children, ...props }) => {
   return (
     <div className="w-full h-full">
       <MapContainer
@@ -165,6 +165,8 @@ const MapComponent: React.FC<MapComponentProps> = (props) => {
         {/* All dynamic content is now inside MapContent */}
         <MapContent {...props} />
 
+        {/* Render children inside the map container (for controls, etc.) */}
+        {children}
       </MapContainer>
     </div>
   );
