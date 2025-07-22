@@ -1,3 +1,4 @@
+//* Separation of concerns
 import { useState, useEffect } from 'react';
 import { Point, CreatePointRequest, UpdatePointRequest, CoordinateType } from '@/lib/types';
 import { ApiService } from '@/lib/api';
