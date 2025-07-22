@@ -4,7 +4,6 @@ import { useEffect, useRef } from 'react';
 import { useMap } from 'react-leaflet';
 import type { FeatureGroup, LatLng } from 'leaflet';
 import 'leaflet';
-import 'leaflet-draw/dist/leaflet.draw.css';
 import 'leaflet-draw';
 
 import { DrawingMode } from './DrawingToolbar';
@@ -75,7 +74,8 @@ const MapDrawController: React.FC<MapDrawControllerProps> = ({
         case 'polygon':
           type = CoordinateType.Polygon;
           const latlngs = layer.getLatLngs()[0];
-          // Poligonu kapatmak için ilk noktayı sona ekle
+          //* Poligonu kapatmak için ilk noktayı sona ekle
+          //* self exp : genel projelerde böyle oluyor, yoksa baş son mantığı olmazsa closed area olmaz.
           const closedLatLngs = [...latlngs, latlngs[0]];
           geometry = closedLatLngs
             .map((p: LatLng) => `${p.lng} ${p.lat}`)
@@ -88,7 +88,9 @@ const MapDrawController: React.FC<MapDrawControllerProps> = ({
       }
 
       onShapeDrawn(type, geometry);
-      setDrawingMode('off'); // Çizimden sonra modu kapat
+      setDrawingMode('off'); //* çizimden sonra modu kapat. 
+      //* State management için useEffect kullanılıyor, iyice araştırmak lazım bütün state management ile ilgili
+      //* self task : state mng iyice incele projede.
     });
 
     return () => {
