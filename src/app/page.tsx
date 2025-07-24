@@ -1,16 +1,20 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useMemo } from 'react';
 import dynamic from 'next/dynamic';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Toaster } from '@/components/ui/sonner';
 import { usePoints } from '@/hooks/usePoints';
 import { Point, CreatePointRequest, UpdatePointRequest, CoordinateType } from '@/lib/types';
+import { formatGeometry } from '@/lib/api';
 import PointsTable from '@/components/PointsTable';
 import PointDialog from '@/components/PointDialog';
-import { Plus, RefreshCw, Map, MapPin } from 'lucide-react';
+import FilterPanel from '@/components/FilterPanel';
+import { RefreshCw, Map, MapPin } from 'lucide-react';
 import { DrawingToolbar, DrawingMode } from '@/components/DrawingToolbar';
+import { LatLng } from 'leaflet';
+import { toast } from 'sonner';
 
 // Dynamically import MapComponent to avoid SSR issues with Leaflet
 const MapComponent = dynamic(() => import('@/components/MapComponent'), {
@@ -29,7 +33,7 @@ const MapComponent = dynamic(() => import('@/components/MapComponent'), {
 const MapDrawController = dynamic(() => import('@/components/MapDrawController'), { ssr: false });
 
 export default function HomePage() {
-  const { points, loading, error, createPoint, updatePoint, deletePoint, fetchPoints } = usePoints();
+  const { points, loading, createPoint, updatePoint, deletePoint, fetchPoints } = usePoints();
   const [selectedPoint, setSelectedPoint] = useState<Point | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingPoint, setEditingPoint] = useState<Point | null>(null);
@@ -37,6 +41,14 @@ export default function HomePage() {
   const [newShapeInfo, setNewShapeInfo] = useState<{ geometry: string; coordinateType: CoordinateType } | null>(null);
   const [hiddenPoints, setHiddenPoints] = useState<Set<number>>(new Set());
   const [drawingMode, setDrawingMode] = useState<DrawingMode>('off');
+  const [draggingPointId, setDraggingPointId] = useState<number | null>(null);
+  const [activeFilters, setActiveFilters] = useState<{
+    types: Set<CoordinateType>;
+    searchTerm: string;
+  }>({
+    types: new Set([CoordinateType.Point, CoordinateType.Line, CoordinateType.Polygon]),
+    searchTerm: '',
+  });
 
   const handleMapClick = (lat: number, lng: number) => {
     if (drawingMode !== 'off') return; // Çizim modunda ise haritaya tıklamayı engelle
@@ -89,6 +101,88 @@ export default function HomePage() {
       return newHidden;
     });
   };
+
+  const handlePolygonDragEnd = async (point: Point, newPositions: LatLng[]) => {
+    setDraggingPointId(point.id);
+    
+    // Convert LatLng array to geometry string format
+    const newGeometry = formatGeometry(newPositions.map(pos => [pos.lat, pos.lng]));
+    
+    // Create update request
+    const updateRequest: UpdatePointRequest = {
+      id: point.id,
+      name: point.name,
+      geometry: newGeometry,
+      coordinateType: point.coordinateType
+    };
+    
+    try {
+      // Call API to update the point
+      const success = await updatePoint(updateRequest);
+      
+      if (success) {
+        toast.success('Alan başarıyla taşındı');
+      } else {
+        // Rollback on failure
+        toast.error('Alan taşınamadı, lütfen tekrar deneyin');
+      }
+    } catch {
+      // Rollback on error
+      toast.error('Bir hata oluştu, lütfen tekrar deneyin');
+    } finally {
+      setDraggingPointId(null);
+    }
+  };
+
+  const handlePointDragEnd = async (point: Point, newPosition: LatLng) => {
+    setDraggingPointId(point.id);
+    
+    // Convert LatLng to geometry string format
+    const newGeometry = formatGeometry([[newPosition.lat, newPosition.lng]]);
+    
+    // Create update request
+    const updateRequest: UpdatePointRequest = {
+      id: point.id,
+      name: point.name,
+      geometry: newGeometry,
+      coordinateType: point.coordinateType
+    };
+    
+    try {
+      // Call API to update the point
+      const success = await updatePoint(updateRequest);
+      
+      if (success) {
+        toast.success('Nokta başarıyla taşındı');
+      } else {
+        // Rollback on failure
+        toast.error('Nokta taşınamadı, lütfen tekrar deneyin');
+      }
+    } catch {
+      // Rollback on error
+      toast.error('Bir hata oluştu, lütfen tekrar deneyin');
+    } finally {
+      setDraggingPointId(null);
+    }
+  };
+
+  // Filter points based on active filters
+  const filteredPoints = useMemo(() => {
+    return points.filter(point => {
+      // Filter by type
+      if (!activeFilters.types.has(point.coordinateType)) {
+        return false;
+      }
+      
+      // Filter by search term
+      if (activeFilters.searchTerm && 
+          !point.name.toLowerCase().includes(activeFilters.searchTerm.toLowerCase())) {
+        return false;
+      }
+      
+      return true;
+    });
+  }, [points, activeFilters]);
 
   const totalPoints = points.length;
   const pointsByType = {
@@ -149,11 +243,14 @@ export default function HomePage() {
           </CardHeader>
           <CardContent className="p-0 h-[calc(100%-4rem)]">
             <MapComponent
-              points={points}
+              points={filteredPoints}
               onMapClick={handleMapClick}
               selectedPoint={selectedPoint}
               onPointSelect={handlePointSelect}
               hiddenPoints={hiddenPoints}
+              onPolygonDragEnd={handlePolygonDragEnd}
+              onPointDragEnd={handlePointDragEnd}
+              draggingPointId={draggingPointId}
             >
               {drawingMode !== 'off' && (
                 <MapDrawController
@@ -175,20 +272,30 @@ export default function HomePage() {
         <div className="flex flex-col lg:flex-row gap-6">
           
           {/* Points Table Section - Fills remaining space */}
-          <div className="flex-1">
+          <div className="flex-1 space-y-4">
+            {/* Filter Panel */}
+            <FilterPanel
+              activeFilters={activeFilters}
+              onFiltersChange={setActiveFilters}
+              totalCount={totalPoints}
+              filteredCount={filteredPoints.length}
+              pointsByType={pointsByType}
+            />
+            
+            {/* Table */}
             <Card className="h-full">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <MapPin className="w-5 h-5" />
                   Koordinat Listesi
                   <span className="text-sm font-normal text-gray-600">
-                    ({totalPoints} nokta)
+                    ({filteredPoints.length} / {totalPoints} nokta)
                   </span>
                 </CardTitle>
               </CardHeader>
               <CardContent>
                 <PointsTable
-                  points={points}
+                  points={filteredPoints}
                   onEdit={handleEditPoint}
                   onDelete={deletePoint}
                   onSelect={handlePointSelect}
@@ -201,32 +308,7 @@ export default function HomePage() {
             </Card>
           </div>
 
-          {/* Statistics Section - Square boxes */}
-          <div className="flex flex-row lg:flex-col gap-2 justify-start">
-            <div className="w-24 h-24 bg-red-50 border border-red-200 rounded-lg flex flex-col items-center justify-center">
-              <div className="w-2 h-2 rounded-full bg-red-500 mb-1"></div>
-              <p className="text-xs font-semibold text-red-700">Noktalar</p>
-              <p className="text-xl font-bold text-red-900 mt-1">{pointsByType.points}</p>
-            </div>
-
-            <div className="w-24 h-24 bg-blue-50 border border-blue-200 rounded-lg flex flex-col items-center justify-center">
-              <div className="w-2 h-2 rounded-full bg-blue-500 mb-1"></div>
-              <p className="text-xs font-semibold text-blue-700">Çizgiler</p>
-              <p className="text-xl font-bold text-blue-900 mt-1">{pointsByType.lines}</p>
-            </div>
-
-            <div className="w-24 h-24 bg-green-50 border border-green-200 rounded-lg flex flex-col items-center justify-center">
-              <div className="w-2 h-2 rounded-full bg-green-500 mb-1"></div>
-              <p className="text-xs font-semibold text-green-700">Alanlar</p>
-              <p className="text-xl font-bold text-green-900 mt-1">{pointsByType.polygons}</p>
-            </div>
-
-            <div className="w-24 h-24 bg-slate-50 border border-slate-200 rounded-lg flex flex-col items-center justify-center">
-              <div className="w-2 h-2 rounded-full bg-slate-500 mb-1"></div>
-              <p className="text-xs font-semibold text-slate-700">Toplam</p>
-              <p className="text-xl font-bold text-slate-900 mt-1">{totalPoints}</p>
-            </div>
-          </div>
+      
         </div>
 
         {/* Usage Instructions */}
