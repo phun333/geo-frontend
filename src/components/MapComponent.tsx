@@ -1,10 +1,14 @@
 'use client';
 
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, lazy, Suspense } from 'react';
 import { MapContainer, TileLayer, Marker, Popup, Polyline, Polygon, useMap } from 'react-leaflet';
-import { Icon, LatLngExpression } from 'leaflet';
+import { Icon, LatLngExpression, LatLng } from 'leaflet';
 import { Point, CoordinateType } from '@/lib/types';
 import { parseGeometry, getCoordinateTypeColor, getCoordinateTypeLabel } from '@/lib/api';
+
+// Lazy load DraggablePolygon and DraggableMarker to avoid SSR issues
+const DraggablePolygon = lazy(() => import('./DraggablePolygon'));
+const DraggableMarker = lazy(() => import('./DraggableMarker'));
 
 // Fix for leaflet default markers
 delete (Icon.Default.prototype as any)._getIconUrl;
@@ -20,6 +24,9 @@ interface MapComponentProps {
   selectedPoint?: Point | null;
   onPointSelect?: (point: Point) => void;
   hiddenPoints?: Set<number>;
+  onPolygonDragEnd?: (point: Point, newPositions: LatLng[]) => void;
+  onPointDragEnd?: (point: Point, newPosition: LatLng) => void;
+  draggingPointId?: number | null;
 }
 
 // Turkey center coordinates
@@ -32,7 +39,10 @@ const MapContent = ({
   onMapClick, 
   selectedPoint, 
   onPointSelect,
-  hiddenPoints = new Set()
+  hiddenPoints = new Set(),
+  onPolygonDragEnd,
+  onPointDragEnd,
+  draggingPointId
 }: MapComponentProps) => {
   const map = useMap();
 
@@ -60,7 +70,39 @@ const MapContent = ({
 
     switch (point.coordinateType) {
       case CoordinateType.Point:
-        return (
+        return onPointDragEnd ? (
+          <Suspense
+            key={point.id}
+            fallback={
+              <Marker
+                position={coordinates[0]}
+              />
+            }
+          >
+            <DraggableMarker
+              point={point}
+              position={coordinates[0]}
+              onClick={() => onPointSelect?.(point)}
+              onDragEnd={onPointDragEnd}
+              isDragging={draggingPointId === point.id}
+            >
+              <Popup>
+                <div className="space-y-2">
+                  <h3 className="font-semibold">{point.name}</h3>
+                  <p className="text-sm text-gray-600">
+                    {getCoordinateTypeLabel(point.coordinateType)}
+                  </p>
+                  <p className="text-xs text-gray-500">
+                    ID: {point.id}
+                  </p>
+                  <p className="text-xs text-blue-600 font-medium">
+                    Sürükleyerek taşıyabilirsiniz
+                  </p>
+                </div>
+              </Popup>
+            </DraggableMarker>
+          </Suspense>
+        ) : (
           <Marker 
             key={point.id} 
             position={coordinates[0]}
@@ -109,7 +151,47 @@ const MapContent = ({
         );
       
       case CoordinateType.Polygon:
-        return (
+        return onPolygonDragEnd ? (
+          <Suspense
+            key={point.id}
+            fallback={
+              <Polygon
+                positions={coordinates}
+                color={color}
+                opacity={opacity}
+                fillOpacity={isSelected ? 0.3 : 0.2}
+                weight={isSelected ? 3 : 2}
+              />
+            }
+          >
+            <DraggablePolygon
+              point={point}
+              positions={coordinates}
+              color={color}
+              opacity={opacity}
+              fillOpacity={isSelected ? 0.3 : 0.2}
+              weight={isSelected ? 3 : 2}
+              onClick={() => onPointSelect?.(point)}
+              onDragEnd={onPolygonDragEnd}
+              isDragging={draggingPointId === point.id}
+            >
+              <Popup>
+                <div className="space-y-2">
+                  <h3 className="font-semibold">{point.name}</h3>
+                  <p className="text-sm text-gray-600">
+                    {getCoordinateTypeLabel(point.coordinateType)}
+                  </p>
+                  <p className="text-xs text-gray-500">
+                    ID: {point.id}
+                  </p>
+                  <p className="text-xs text-blue-600 font-medium">
+                    Sürükleyerek taşıyabilirsiniz
+                  </p>
+                </div>
+              </Popup>
+            </DraggablePolygon>
+          </Suspense>
+        ) : (
           <Polygon 
             key={point.id}
             positions={coordinates}
