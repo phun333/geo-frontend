@@ -23,6 +23,9 @@ importers:
       '@radix-ui/react-toast':
         specifier: ^1.2.14
         version: 1.2.14(@types/react-dom@19.1.6(@types/react@19.1.8))(@types/react@19.1.8)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
+      '@react-leaflet/core':
+        specifier: ^3.0.0
+        version: 3.0.0(leaflet@1.9.4)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
       '@types/leaflet':
         specifier: ^1.9.19
         version: 1.9.19
@@ -41,6 +44,9 @@ importers:
       leaflet-draw:
         specifier: ^1.0.4
         version: 1.0.4
+      leaflet-path-drag:
+        specifier: ^1.9.5
+        version: 1.9.5
       lucide-react:
         specifier: ^0.525.0
         version: 0.525.0(react@19.1.0)
@@ -1689,6 +1695,9 @@ packages:
 
   leaflet-draw@1.0.4:
     resolution: {integrity: sha512-rsQ6saQO5ST5Aj6XRFylr5zvarWgzWnrg46zQ1MEOEIHsppdC/8hnN8qMoFvACsPvTioAuysya/TVtog15tyAQ==}
+
+  leaflet-path-drag@1.9.5:
+    resolution: {integrity: sha512-u2oQzU/IR+XezHwREyB4T3Og5DJXgdyxtmK+GEQyrVLUwLlWaFxa0QMGxlWgE4Ch+rSyUeYOq/x8uLnelC3DnQ==}
 
   leaflet@1.9.4:
     resolution: {integrity: sha512-nxS1ynzJOmOlHp+iL3FyWqK89GtNL8U8rvlMOsQdTTssxZwCXh8N2NB3GDQOL+YR3XnWyZAxwQixURb+FA74PA==}
@@ -3998,6 +4007,8 @@ snapshots:
       language-subtag-registry: 0.3.23
 
   leaflet-draw@1.0.4: {}
+
+  leaflet-path-drag@1.9.5: {}
 
   leaflet@1.9.4: {}
 

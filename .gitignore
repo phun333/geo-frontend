@@ -203,5 +203,7 @@ ui-debug.log
 .yarn/install-state.gz
 .pnp.*
 
-# self experiment
+# self exp
 geoproject_git_ingest.txt
+CLAUDE.md
+phun333-geoproject.txt
